@@ -3,26 +3,21 @@
 ## Overview
 This repository documents a recurring UI hang and mouse cursor anomaly observed on Linux (X11) systems. The symptom involves the mouse cursor turning into an "iron cross" (crosshair) and terminal windows becoming unresponsive.
 
-## The Root Cause: ImageMagick Collision
-The anomaly is caused by a **syntax collision** between Python script headers and the ImageMagick `import` utility.
+## The Root Cause: ImageMagick Collision & Systemd Persistence
 
-### Failure Chain
-1.  **Execution:** A Python script (e.g., `script.py`) is executed as a shell script (e.g., via `./script.py` or an automated agent).
-2.  **Missing Shebang:** The script lacks the mandatory `#!/usr/bin/env python3` header.
-3.  **Shell Interpretation:** The Linux shell (bash/zsh) attempts to execute the script line-by-line.
-4.  **The Collision:** The first line of many Python scripts is `import os` or `import sys`.
-5.  **Utility Launch:** The shell sees the `import` command and, instead of treating it as a Python keyword, launches the **ImageMagick `import` utility**.
-6.  **UI Capture:** The ImageMagick `import` tool is a screenshot utility that waits for a window selection. It:
-    *   Changes the cursor to the "iron cross" (`XC_X_cursor`).
-    *   Captures the X11 mouse/keyboard focus.
-    *   Freezes terminal refreshing until a selection is made or the process is killed.
+The anomaly is caused by a **syntax collision** between Python script headers and the ImageMagick `import` utility, coupled with **Systemd User Services** that keep the failing scripts in a retry loop.
 
-## Identification
+### Persistence Mechanism
+Even if the scripts are fixed manually, background processes like **Systemd User Services** (`agent-os-observer.service`, `agent-os-watchdog.service`) may be configured to execute these scripts frequently. If the underlying script lacks a shebang, the service will trigger the "iron cross" on every execution attempt.
+
+### Identification
 To confirm this issue is happening, run:
 ```bash
 ps aux | grep "import"
+systemctl --user list-units | grep "agent-os"
 ```
-If you see a process like `import unicodedata` or `import os`, the collision has occurred.
+If you see a process like `import unicodedata` or `import os`, and systemd services are in a "failed" or "activating" state, the collision is active.
+
 
 ## Mitigation & Prevention
 

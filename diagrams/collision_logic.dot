@@ -3,9 +3,10 @@ digraph G {
     node [shape=box, style=filled, fontname="Arial"];
     
     subgraph cluster_0 {
-        label = "User or Agent Action";
+        label = "Triggers";
         color = lightgrey;
-        action [label="Execute script.py\n(without interpreter)", fillcolor=white];
+        action [label="Agent Action\n(Claude / Automated)", fillcolor=white];
+        systemd [label="Systemd Timer\n(agent-os-observer)", fillcolor=lightblue];
     }
 
     subgraph cluster_1 {
@@ -29,12 +30,18 @@ digraph G {
         freeze [label="Terminal Hang", fillcolor=white];
         focus [label="Capture X11 Focus", fillcolor=white];
     }
+    
+    retry [label="Service Restart\n(Infinite Loop)", fillcolor=red, fontcolor=white];
 
     action -> check_shebang;
+    systemd -> check_shebang;
     check_shebang -> shell_fallback [label="Missing"];
     shell_fallback -> line_by_line;
     line_by_line -> imagemagick;
     imagemagick -> cursor;
     imagemagick -> freeze;
     imagemagick -> focus;
+    
+    freeze -> retry [label="Timeout/Fail"];
+    retry -> systemd [label="Restart"];
 }
