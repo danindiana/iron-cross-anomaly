@@ -1,0 +1,40 @@
+digraph G {
+    rankdir=LR;
+    node [shape=box, style=filled, fontname="Arial"];
+    
+    subgraph cluster_0 {
+        label = "User or Agent Action";
+        color = lightgrey;
+        action [label="Execute script.py\n(without interpreter)", fillcolor=white];
+    }
+
+    subgraph cluster_1 {
+        label = "System Logic";
+        color = lightblue;
+        check_shebang [label="Check for #!", shape=diamond, fillcolor=yellow];
+        shell_fallback [label="Fallback to Shell\n(/bin/sh)", fillcolor=orange];
+        line_by_line [label="Read Line 1:\n'import os'", fillcolor=orange];
+    }
+
+    subgraph cluster_2 {
+        label = "The Collision";
+        color = lightsalmon;
+        imagemagick [label="Launch ImageMagick\n/usr/bin/import", fillcolor=red, fontcolor=white];
+    }
+
+    subgraph cluster_3 {
+        label = "UI Symptoms";
+        color = lightpink;
+        cursor [label="Cursor -> Iron Cross", fillcolor=white];
+        freeze [label="Terminal Hang", fillcolor=white];
+        focus [label="Capture X11 Focus", fillcolor=white];
+    }
+
+    action -> check_shebang;
+    check_shebang -> shell_fallback [label="Missing"];
+    shell_fallback -> line_by_line;
+    line_by_line -> imagemagick;
+    imagemagick -> cursor;
+    imagemagick -> freeze;
+    imagemagick -> focus;
+}

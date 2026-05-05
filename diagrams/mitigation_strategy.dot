@@ -1,0 +1,28 @@
+digraph G {
+    node [shape=note, style=filled, fontname="Arial"];
+    
+    collision [label="Collision Logic", fillcolor=lightpink];
+    
+    subgraph cluster_recovery {
+        label = "Recovery Options";
+        color = green;
+        r1 [label="Esc Key", fillcolor=white];
+        r2 [label="Right-Click", fillcolor=white];
+        r3 [label="killall -9 import", fillcolor=white];
+    }
+
+    subgraph cluster_prevention {
+        label = "Prevention Steps";
+        color = blue;
+        p1 [label="Add #!/usr/bin/env python3", fillcolor=white];
+        p2 [label="Use 'python3 script.py'", fillcolor=white];
+        p3 [label="Alias 'import' in .bashrc", fillcolor=white];
+    }
+
+    collision -> r1;
+    collision -> r2;
+    collision -> r3;
+    collision -> p1;
+    collision -> p2;
+    collision -> p3;
+}
