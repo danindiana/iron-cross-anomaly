@@ -7,29 +7,30 @@ This repository documents a recurring UI hang and mouse cursor anomaly observed 
 
 The anomaly is caused by a **syntax collision** between Python script headers and the ImageMagick `import` utility, coupled with **Systemd User Services** that keep the failing scripts in a retry loop.
 
-### Persistence Mechanism
-Even if the scripts are fixed manually, background processes like **Systemd User Services** (`agent-os-observer.service`, `agent-os-watchdog.service`) may be configured to execute these scripts frequently. If the underlying script lacks a shebang, the service will trigger the "iron cross" on every execution attempt.
+### Persistence Mechanism: The Systemd Loop
+Even if the scripts are fixed manually, background processes like **Systemd Services** may be configured to execute these scripts in a retry loop. On this system, we identified both user-level and system-wide services (`/etc/systemd/system/agent-os-scheduler.service`, `ollama-proxy-admin.service`) that were triggering the anomaly every few seconds.
 
-### Identification
-To confirm this issue is happening, run:
-```bash
-ps aux | grep "import"
-systemctl --user list-units | grep "agent-os"
-```
-If you see a process like `import unicodedata` or `import os`, and systemd services are in a "failed" or "activating" state, the collision is active.
-
+### The "Ghost" Process False Positive
+During investigation, you may see strings containing "import" in the process list (e.g., in `ps aux`) that are **not** the ImageMagick utility. For example, the Rust compiler (`rustc`) uses flags like `--warn=clippy::wildcard_imports`. Always verify with `pgrep -x import` to ensure you are looking at the actual binary.
 
 ## Mitigation & Prevention
 
 ### Immediate Recovery
 *   **Right-Click:** Cancel the ImageMagick selection mode.
 *   **Esc Key:** Abort the capture.
-*   **Kill Process:** `killall -9 import`
+*   **Kill Process:** `sudo killall -9 import`
 
 ### Permanent Prevention
 1.  **Mandatory Shebangs:** Every Python script must start with `#!/usr/bin/env python3`.
 2.  **Explicit Invocation:** Always run scripts using the interpreter: `python3 script.py`.
-3.  **Binary Aliasing (Optional):** Alias the `import` command in `~/.bashrc` to prevent accidental shell execution.
+3.  **Shell Protection:** Add an alias to your `.bashrc` or `.zshrc` to block the binary:
+    ```bash
+    alias import='echo "Blocked ImageMagick import to prevent UI hang."'
+    ```
+4.  **Service Audit:** Disable any looping systemd services that reference un-shebanged scripts:
+    ```bash
+    sudo systemctl disable --now agent-os-scheduler.service
+    ```
 
 ## Visualizations
 See the `diagrams/` directory for Graphviz representations of the failure logic.
